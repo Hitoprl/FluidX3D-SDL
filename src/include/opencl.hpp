@@ -288,7 +288,7 @@ public:
 		}
 		return *this; // destructor of memory will be called automatically
 	}
-	inline T* const exchange_host_buffer(T* const host_buffer) { // sets host_buffer to new pointer and returns old pointer
+	inline T* exchange_host_buffer(T* const host_buffer) { // sets host_buffer to new pointer and returns old pointer
 		T* const swap = this->host_buffer;
 		this->host_buffer = host_buffer;
 		return swap;
@@ -336,28 +336,28 @@ public:
 		if(host_buffer_exists) for(ulong i=0ull; i<N*(ulong)d; i++) host_buffer[i] = value;
 		write_to_device();
 	}
-	inline const ulong length() const {
+	inline ulong length() const {
 		return N;
 	}
-	inline const uint dimensions() const {
+	inline uint dimensions() const {
 		return d;
 	}
-	inline const ulong range() const {
+	inline ulong range() const {
 		return N*(ulong)d;
 	}
-	inline const ulong capacity() const { // returns capacity of the buffer in Byte
+	inline ulong capacity() const { // returns capacity of the buffer in Byte
 		return N*(ulong)d*sizeof(T);
 	}
-	inline T* const data() {
+	inline T* data() {
 		return host_buffer;
 	}
-	inline const T* const data() const {
+	inline const T* data() const {
 		return host_buffer;
 	}
-	inline T* const operator()() {
+	inline T* operator()() {
 		return host_buffer;
 	}
-	inline const T* const operator()() const {
+	inline const T* operator()() const {
 		return host_buffer;
 	}
 	inline T& operator[](const ulong i) {

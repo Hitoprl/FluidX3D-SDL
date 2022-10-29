@@ -1215,15 +1215,16 @@ struct floatN {
 	inline float operator()(const uint i) {
 		return V[i];
 	}
-	inline const float operator()(const uint i) const {
+	inline float operator()(const uint i) const {
 		return V[i];
 	}
-	inline float* const operator()() {
+	inline float* operator()() {
 		return V;
 	}
-	inline const float* const operator()() const {
+	inline const float* operator()() const {
 		return V;
 	}
+	floatN(const floatN&) = default;
 	inline floatN& operator=(const floatN& v) {
 		delete[] this->V;
 		this->N = v.N;
@@ -1358,21 +1359,22 @@ struct floatNxN {
 	inline float operator()(const uint i) {
 		return M[i];
 	}
-	inline const float operator()(const uint i) const {
+	inline float operator()(const uint i) const {
 		return M[i];
 	}
 	inline float operator()(const uint i, const uint j) {
 		return M[N*i+j];
 	}
-	inline const float operator()(const uint i, const uint j) const {
+	inline float operator()(const uint i, const uint j) const {
 		return M[N*i+j];
 	}
-	inline float* const operator()() {
+	inline float* operator()() {
 		return M;
 	}
-	inline const float* const operator()() const {
+	inline const float* operator()() const {
 		return M;
 	}
+	floatNxN(const floatNxN&) = default;
 	inline floatNxN& operator=(const floatNxN& m) {
 		delete[] this->M;
 		this->N = m.N;
@@ -1573,7 +1575,7 @@ inline floatN operator*(const floatNxN& m, const floatN& v) { // multiply vector
 	}
 	return r;
 }
-inline floatN::floatN(const uint N, const floatNxN& m) { // extract diagonal of matrix
+inline floatN::floatN(const uint, const floatNxN& m) { // extract diagonal of matrix
 	this->N = m.N;
 	this->V = new float[m.N];
 	for(uint i=0u; i<m.N; i++) this->V[i] = m.M[m.N*i+i];
@@ -1959,15 +1961,16 @@ struct doubleN {
 	inline double operator()(const uint i) {
 		return V[i];
 	}
-	inline const double operator()(const uint i) const {
+	inline double operator()(const uint i) const {
 		return V[i];
 	}
-	inline double* const operator()() {
+	inline double* operator()() {
 		return V;
 	}
-	inline const double* const operator()() const {
+	inline const double* operator()() const {
 		return V;
 	}
+	doubleN(const doubleN&) = default;
 	inline doubleN& operator=(const doubleN& v) {
 		delete[] this->V;
 		this->N = v.N;
@@ -2102,21 +2105,22 @@ struct doubleNxN {
 	inline double operator()(const uint i) {
 		return M[i];
 	}
-	inline const double operator()(const uint i) const {
+	inline double operator()(const uint i) const {
 		return M[i];
 	}
 	inline double operator()(const uint i, const uint j) {
 		return M[N*i+j];
 	}
-	inline const double operator()(const uint i, const uint j) const {
+	inline double operator()(const uint i, const uint j) const {
 		return M[N*i+j];
 	}
-	inline double* const operator()() {
+	inline double* operator()() {
 		return M;
 	}
-	inline const double* const operator()() const {
+	inline const double* operator()() const {
 		return M;
 	}
+	doubleNxN(const doubleNxN&) = default;
 	inline doubleNxN& operator=(const doubleNxN& m) {
 		delete[] this->M;
 		this->N = m.N;
@@ -2317,7 +2321,7 @@ inline doubleN operator*(const doubleNxN& m, const doubleN& v) { // multiply vec
 	}
 	return r;
 }
-inline doubleN::doubleN(const uint N, const doubleNxN& m) { // extract diagonal of matrix
+inline doubleN::doubleN(const uint, const doubleNxN& m) { // extract diagonal of matrix
 	this->N = m.N;
 	this->V = new double[m.N];
 	for(uint i=0u; i<m.N; i++) this->V[i] = m.M[m.N*i+i];
@@ -2737,7 +2741,7 @@ inline bool equals(const string& a, const string& b) {
 inline string replace(const string& s, const string& from, const string& to) {
 	string r = s;
 	int p = 0;
-	while((p=(int)r.find(from, p))!=string::npos) {
+	while((p=(int)r.find(from, p))!=static_cast<int>(string::npos)) {
 		r.replace(p, from.length(), to);
 		p += (int)to.length();
 	}
@@ -2844,22 +2848,22 @@ public:
 	inline ~Image() {
 		if(!external_pointer) delete[] d;
 	}
-	inline const uint width() const {
+	inline uint width() const {
 		return this->w;
 	}
-	inline const uint height() const {
+	inline uint height() const {
 		return this->h;
 	}
-	inline const uint length() const {
+	inline uint length() const {
 		return this->w*this->h;
 	}
 	inline int* data() {
 		return this->d;
 	}
-	inline const int color(const uint x, const uint y) const {
+	inline int color(const uint x, const uint y) const {
 		return this->d[x+y*this->w];
 	}
-	inline const int color(const uint i) const {
+	inline int color(const uint i) const {
 		return this->d[i];
 	}
 	inline void set_color(const uint x, const uint y, const int color) {
@@ -3584,10 +3588,10 @@ inline void print_color_test() {
 	println();
 }
 #ifdef UTILITIES_CONSOLE_INPUT
-// ASCII codes (key>0): 8 backspace, 9 tab, 10 newline, 27 escape, 127 delete, !"#$%&'()*+,-./0-9:;<=>?@A-Z[]^_`a-z{|}~üäÄöÖÜßµ´§°¹³²
+// ASCII codes (key>0): 8 backspace, 9 tab, 10 newline, 27 escape, 127 delete, !"#$%&'()*+,-./0-9:;<=>?@A-Z[]^_`a-z{|}~ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 // control key codes (key<0): -38/-40/-37/-39 up/down/left/right arrow, -33/-34 page up/down, -36/-35 pos1/end
 // other key codes (key<0): -45 insert, -144 num lock, -20 caps lock, -91 windows key, -93 kontext menu key, -112 to -123 F1 to F12
-// not working: ¹ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93), F11 (-122)
+// not working: ï¿½ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93), F11 (-122)
 #if defined(_WIN32)
 inline int key_press() { // not working: F11 (-122, toggles fullscreen)
 	KEY_EVENT_RECORD keyevent;
@@ -3613,7 +3617,7 @@ inline int key_press() { // not working: F11 (-122, toggles fullscreen)
 				case  -12: continue; // disable num block 5 with num lock deactivated
 				case   13: return  10; // enter
 				case  -46: return 127; // delete
-				case  -49: return 251; // ¹
+				case  -49: return 251; // ï¿½
 				case    0: continue;
 				case    1: continue; // disable Ctrl + a (selects all text)
 				case    2: continue; // disable Ctrl + b
@@ -3648,7 +3652,7 @@ inline int key_press() { // not working: F11 (-122, toggles fullscreen)
 }
 #else // Linux
 #include <termios.h>
-inline int key_press() { // not working: ¹ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93)
+inline int key_press() { // not working: ï¿½ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93)
 	struct termios term;
 	tcgetattr(0, &term);
 	while(true) {
@@ -3662,7 +3666,7 @@ inline int key_press() { // not working: ¹ (251), num lock (-144), caps lock (-2
 			ioctl(0, FIONREAD, &nbbytes); // 0 is STDIN
 		}
 		int key = (int)getchar();
-		if(key==27||key==194||key==195) { // escape, 194/195 is escape for °ß´äöüÄÖÜ
+		if(key==27||key==194||key==195) { // escape, 194/195 is escape for ï¿½ß´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			key = (int)getchar();
 			if(key==91) { // [ following escape
 				key = (int)getchar(); // get code of next char after \e[
@@ -3693,19 +3697,19 @@ inline int key_press() { // not working: ¹ (251), num lock (-144), caps lock (-2
 			case  127: return   8; // backspace
 			case  -27: return  27; // escape
 			case  -51: return 127; // delete
-			case -164: return 132; // ä
-			case -182: return 148; // ö
-			case -188: return 129; // ü
-			case -132: return 142; // Ä
-			case -150: return 153; // Ö
-			case -156: return 154; // Ü
-			case -159: return 225; // ß
-			case -181: return 230; // µ
-			case -167: return 245; // §
-			case -176: return 248; // °
-			case -178: return 253; // ²
-			case -179: return 252; // ³
-			case -180: return 239; // ´
+			case -164: return 132; // ï¿½
+			case -182: return 148; // ï¿½
+			case -188: return 129; // ï¿½
+			case -132: return 142; // ï¿½
+			case -150: return 153; // ï¿½
+			case -156: return 154; // ï¿½
+			case -159: return 225; // ï¿½
+			case -181: return 230; // ï¿½
+			case -167: return 245; // ï¿½
+			case -176: return 248; // ï¿½
+			case -178: return 253; // ï¿½
+			case -179: return 252; // ï¿½
+			case -180: return 239; // ï¿½
 			case  -65: return -38; // up arrow
 			case  -66: return -40; // down arrow
 			case  -68: return -37; // left arrow
