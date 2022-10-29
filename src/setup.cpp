@@ -82,7 +82,7 @@
 					if(r<R) {
 						const double unum = (double)sqrt(sq(lbm.u.x[n])+sq(lbm.u.y[n])+sq(lbm.u.z[n])); // numerical velocity
 						const double uref = umax*(sq(R)-sq(r))/sq(R); // theoretical velocity profile u = G*(R^2-r^2)
-						error_dif += sq(unum-uref); // L2 error (Krüger p. 138)
+						error_dif += sq(unum-uref); // L2 error (Krï¿½ger p. 138)
 						error_sum += sq(uref);
 						s += to_string(r)+" "+to_string(unum)+" "+to_string(uref)+"\n";
 					}
@@ -96,19 +96,19 @@
 				const double r = (double)(y+0.5f-0.5f*(float)Ny); // radius from channel center
 				const double unum = (double)sqrt(sq(lbm.u.x[n])+sq(lbm.u.y[n])); // numerical velocity
 				const double uref = umax*(sq(R)-sq(r))/sq(R); // theoretical velocity profile u = G*(R^2-r^2)
-				error_dif += sq(unum-uref); // L2 error (Krüger p. 138)
+				error_dif += sq(unum-uref); // L2 error (Krï¿½ger p. 138)
 				error_sum += sq(uref);
 				s += to_string(r)+" "+to_string(unum)+" "+to_string(uref)+"\n";
 			}
 		}
 #endif // D2Q9
 		if(sqrt(error_dif/error_sum)>=error_min) { // stop when error has converged
-			print_info("Poiseuille flow error converged after "+to_string(lbm.get_t())+" steps to "+to_string(error_min)); // typical expected L2 errors: 2-5% (Krüger p. 256)
+			print_info("Poiseuille flow error converged after "+to_string(lbm.get_t())+" steps to "+to_string(error_min)); // typical expected L2 errors: 2-5% (Krï¿½ger p. 256)
 			wait();
 			exit(0);
 		}
 		error_min = fmin(error_min, sqrt(error_dif/error_sum));
-		print_info("Poiseuille flow error after t="+to_string(lbm.get_t())+" is "+to_string(error_min)); // typical expected L2 errors: 2-5% (Krüger p. 256)
+		print_info("Poiseuille flow error after t="+to_string(lbm.get_t())+" is "+to_string(error_min)); // typical expected L2 errors: 2-5% (Krï¿½ger p. 256)
 	}
 } /**/
 
@@ -242,7 +242,7 @@
 
 
 
-/*void main_setup() { // Concorde
+void main_setup() { // Concorde
 	// ######################################################### define simulation box size, viscosity and volume force ############################################################################
 	const uint L = 256u;
 	const float Re = 1000000.0f;
@@ -252,13 +252,13 @@
 	const float size = 1.75f*(float)L;
 	const float3 center = float3(lbm.center().x, 0.52f*size, lbm.center().z+0.03f*size);
 	const float3x3 rotation = float3x3(float3(1, 0, 0), radians(-10.0f))*float3x3(float3(0, 0, 1), radians(90.0f))*float3x3(float3(1, 0, 0), radians(90.0f));
-	lbm.voxelize_stl(get_exe_path()+"../stl/Concorde.stl", center, rotation, size); // https://www.thingiverse.com/thing:1176931/files
+	lbm.voxelize_stl(get_exe_path()+"../../stl/Concorde.stl", center, rotation, size); // https://www.thingiverse.com/thing:1176931/files
 	const uint N=lbm.get_N(), Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); for(uint n=0u, x=0u, y=0u, z=0u; n<N; n++, lbm.coordinates(n, x, y, z)) {
 		// ########################################################################### define geometry #############################################################################################
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	lbm.run();
 } /**/
 
@@ -280,7 +280,7 @@
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//lbm.graphics.set_camera_free(float3(1.0f*(float)Nx, -0.4f*(float)Ny, 2.0f*(float)Nz), -33.0f, 42.0f, 68.0f);
 	//Clock clock;
 	//lbm.run(0u);
@@ -310,7 +310,7 @@
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//Clock clock;
 	//lbm.run(0u);
 	//while(lbm.get_t()<100000u) {
@@ -346,7 +346,7 @@
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//Clock clock;
 	//lbm.run(0u);
 	//while(lbm.get_t()<50000u) {
@@ -391,7 +391,7 @@ void main_setup() { // Star Wars TIE fighter
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//Clock clock;
 	lbm.run(0u);
 	while(lbm.get_t()<50000u) {
@@ -431,7 +431,7 @@ void main_setup() { // Star Wars TIE fighter
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_E; // all non periodic
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//lbm.graphics.set_camera_centered(-60.0f, 20.0f, 0.0f, 2.5f);
 	//Clock clock;
 	//lbm.run(0u);
@@ -470,7 +470,7 @@ void main_setup() { // Star Wars TIE fighter
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==Nz-1u) lbm.flags[n] = TYPE_E;
 		if(z==0u) lbm.flags[n] = TYPE_S;
 	}	// #########################################################################################################################################################################################
-	key_4 = true;
+	keys['4'] = true;
 	//Clock clock;
 	//lbm.run(0u);
 	//while(lbm.get_t()<=units.t(1.0f)) {
@@ -673,11 +673,11 @@ void main_setup() { // Star Wars TIE fighter
 	const float scale = (float)box_diameter/(10.0f*drop_diameter); // 256.0f/400.0f; // 1.0f;
 
 	// rain drop parameters from "Effects of Altitude on Maximum Raindrop Size and Fall Velocity as Limited by Collisional Breakup, Fig. 3" in SI-units
-	float const si_nu = 1.0508E-6f; // kinematic shear viscosity [m^2/s] at 20°C and 35g/l salinity
-	const float si_rho = 1024.8103f; // fluid density [kg/m^3] at 20°C and 35g/l salinity
-	const float si_sigma = 73.81E-3f; // fluid surface tension [kg/s^2] at 20°C and 35g/l salinity
+	float const si_nu = 1.0508E-6f; // kinematic shear viscosity [m^2/s] at 20ï¿½C and 35g/l salinity
+	const float si_rho = 1024.8103f; // fluid density [kg/m^3] at 20ï¿½C and 35g/l salinity
+	const float si_sigma = 73.81E-3f; // fluid surface tension [kg/s^2] at 20ï¿½C and 35g/l salinity
 	const float si_g = 9.81f; // gravitational acceleration [m/s^2]
-	const float alpha = alpha_sim; // impact angle [°], 0 = vertical
+	const float alpha = alpha_sim; // impact angle [ï¿½], 0 = vertical
 
 	//                            0        1        2        3        4        5        6        7        8        9       10       11       12       13 (13 is for validation)
 	const float si_Ds[] = { 1.0E-3f, 1.5E-3f, 2.0E-3f, 2.5E-3f, 3.0E-3f, 3.5E-3f, 4.0E-3f, 4.5E-3f, 5.0E-3f, 5.5E-3f, 6.0E-3f, 6.5E-3f, 7.0E-3f, 4.1E-3f };
@@ -737,8 +737,8 @@ void main_setup() { // Star Wars TIE fighter
 		}
 	}	// #########################################################################################################################################################################################
 	lbm.run(0u);
-	//key_1 = false; // turn off boundary
-	//key_6 = true; // turn on surface raytracing
+	//keys['1'] = false; // turn off boundary
+	//keys['6'] = true; // turn on surface raytracing
 	//Clock clock;
 
 	// image

@@ -410,7 +410,7 @@ public:
 			if(blocking) cl_queue.finish();
 		}
 	}
-	inline void read_from_device_2d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong Nx, const ulong Ny, const int dimension=-1, const bool blocking=true) { // read 2D domain from device, either for all vector dimensions (-1) or for a specified dimension
+	inline void read_from_device_2d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong Nx, const ulong, const int dimension=-1, const bool blocking=true) { // read 2D domain from device, either for all vector dimensions (-1) or for a specified dimension
 		if(host_buffer_exists&&device_buffer_exists) {
 			for(uint y=y0; y<y1; y++) {
 				const ulong n = x0+y*Nx;
@@ -423,7 +423,7 @@ public:
 			if(blocking) cl_queue.finish();
 		}
 	}
-	inline void write_to_device_2d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong Nx, const ulong Ny, const int dimension=-1, const bool blocking=true) { // write 2D domain to device, either for all vector dimensions (-1) or for a specified dimension
+	inline void write_to_device_2d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong Nx, const ulong, const int dimension=-1, const bool blocking=true) { // write 2D domain to device, either for all vector dimensions (-1) or for a specified dimension
 		if(host_buffer_exists&&device_buffer_exists) {
 			for(uint y=y0; y<y1; y++) {
 				const ulong n = x0+y*Nx;
@@ -436,7 +436,7 @@ public:
 			if(blocking) cl_queue.finish();
 		}
 	}
-	inline void read_from_device_3d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong z0, const ulong z1, const ulong Nx, const ulong Ny, const ulong Nz, const int dimension=-1, const bool blocking=true) { // read 3D domain from device, either for all vector dimensions (-1) or for a specified dimension
+	inline void read_from_device_3d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong z0, const ulong z1, const ulong Nx, const ulong Ny, const ulong, const int dimension=-1, const bool blocking=true) { // read 3D domain from device, either for all vector dimensions (-1) or for a specified dimension
 		if(host_buffer_exists&&device_buffer_exists) {
 			for(uint z=z0; z<z1; z++) {
 				for(uint y=y0; y<y1; y++) {
@@ -451,7 +451,7 @@ public:
 			if(blocking) cl_queue.finish();
 		}
 	}
-	inline void write_to_device_3d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong z0, const ulong z1, const ulong Nx, const ulong Ny, const ulong Nz, const int dimension=-1, const bool blocking=true) { // write 3D domain to device, either for all vector dimensions (-1) or for a specified dimension
+	inline void write_to_device_3d(const ulong x0, const ulong x1, const ulong y0, const ulong y1, const ulong z0, const ulong z1, const ulong Nx, const ulong Ny, const ulong, const int dimension=-1, const bool blocking=true) { // write 3D domain to device, either for all vector dimensions (-1) or for a specified dimension
 		if(host_buffer_exists&&device_buffer_exists) {
 			for(uint z=z0; z<z1; z++) {
 				for(uint y=y0; y<y1; y++) {
@@ -486,6 +486,25 @@ public:
 	}
 };
 
+// Only implemented for T = unsigned char
+bool save_voxelized_mesh_to_disk(
+	std::string const& path,
+	Memory<unsigned char> const& flags,
+	Device const& device,
+	float3 box_size,
+	float3 center,
+	float3x3 const& rotation,
+	float size);
+
+bool load_voxelized_mesh_from_disk(
+	std::string const& path,
+	Memory<unsigned char>& flags,
+    Device const& device,
+	float3 const box_size,
+	float3 const center,
+	float3x3 const& rotation,
+	float const size);
+
 class Kernel {
 private:
 	uint number_of_parameters = 0u;
@@ -501,7 +520,8 @@ private:
 	inline void link_parameters(const uint starting_position) {
 		number_of_parameters = max(number_of_parameters, starting_position);
 	}
-	template<class T, class... U> inline void link_parameters(const uint starting_position, const T& parameter, const U&... parameters) {
+	template<class T, class... U>
+	inline void link_parameters(const uint starting_position, const T& parameter, const U&... parameters) {
 		link_parameter(starting_position, parameter);
 		link_parameters(starting_position+1u, parameters...);
 	}

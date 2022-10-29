@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #define UTILITIES_REGEX
 #define UTILITIES_FILE
 #define UTILITIES_PNG
@@ -47,13 +48,15 @@ typedef uint64_t ulong;
 #define min_float 1.401298464E-45f
 #define max_float 3.402823466E38f
 #define epsilon_float 1.192092896E-7f
-#define inf_float as_float(0x7F800000)
-#define nan_float as_float(0xFFFFFFFF)
+#define inf_float as<float>(0x7F800000)
+#define nan_float as<float>(0xFFFFFFFF)
 #define min_double 4.9406564584124654E-324
 #define max_double 1.7976931348623158E308
 #define epsilon_double 2.2204460492503131E-16
-#define inf_double as_double(0x7FF0000000000000)
-#define nan_double as_double(0xFFFFFFFFFFFFFFFF)
+#define inf_double as<double>(0x7FF0000000000000)
+#define nan_double as<double>(0xFFFFFFFFFFFFFFFF)
+
+using namespace std::literals;
 
 class Clock {
 private:
@@ -68,27 +71,21 @@ inline void sleep(const double t) {
 	if(t>0.0) std::this_thread::sleep_for(std::chrono::milliseconds((int)(1E3*t+0.5)));
 }
 
-inline float as_float(const uint x) {
-	return *(float*)&x;
-}
-inline uint as_uint(const float x) {
-	return *(uint*)&x;
-}
-inline double as_double(const ulong x) {
-	return *(double*)&x;
-}
-inline ulong as_ulong(const double x) {
-	return *(ulong*)&x;
+template<typename To, typename From>
+To as(const From x) {
+	To ret;
+	std::memcpy(static_cast<void*>(&ret), static_cast<const void*>(&x), sizeof(x));
+	return ret;
 }
 
 inline float half_to_float(const ushort x) { // IEEE-754 16-bit floating-point format (without infinity): 1-5-10, exp-15, +-131008.0, +-6.1035156E-5, +-5.9604645E-8, 3.311 digits
 	const uint e = (x&0x7C00)>>10; // exponent
 	const uint m = (x&0x03FF)<<13; // mantissa
-	const uint v = as_uint((float)m)>>23; // evil log2 bit hack to count leading zeros in denormalized format
-	return as_float((x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FE000))); // sign : normalized : denormalized
+	const uint v = as<uint>((float)m)>>23; // evil log2 bit hack to count leading zeros in denormalized format
+	return as<float>((x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FE000))); // sign : normalized : denormalized
 }
 inline ushort float_to_half(const float x) { // IEEE-754 16-bit floating-point format (without infinity): 1-5-10, exp-15, +-131008.0, +-6.1035156E-5, +-5.9604645E-8, 3.311 digits
-	const uint b = as_uint(x)+0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
+	const uint b = as<uint>(x)+0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
 	const uint e = (b&0x7F800000)>>23; // exponent
 	const uint m = b&0x007FFFFF; // mantissa; in line below: 0x007FF000 = 0x00800000-0x00001000 = decimal indicator flag - initial rounding
 	return (b&0x80000000)>>16 | (e>112)*((((e-112)<<10)&0x7C00)|m>>13) | ((e<113)&(e>101))*((((0x007FF000+m)>>(125-e))+1)>>1) | (e>143)*0x7FFF; // sign : normalized : denormalized : saturate
@@ -96,11 +93,11 @@ inline ushort float_to_half(const float x) { // IEEE-754 16-bit floating-point f
 inline float half_to_float_custom(const ushort x) { // custom 16-bit floating-point format, 1-4-11, exp-15, +-1.99951168, +-6.10351562E-5, +-2.98023224E-8, 3.612 digits
 	const uint e = (x&0x7800)>>11; // exponent
 	const uint m = (x&0x07FF)<<12; // mantissa
-	const uint v = as_uint((float)m)>>23; // evil log2 bit hack to count leading zeros in denormalized format
-	return as_float((x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FF000))); // sign : normalized : denormalized
+	const uint v = as<uint>((float)m)>>23; // evil log2 bit hack to count leading zeros in denormalized format
+	return as<float>((x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FF000))); // sign : normalized : denormalized
 }
 inline ushort float_to_half_custom(const float x) { // custom 16-bit floating-point format, 1-4-11, exp-15, +-1.99951168, +-6.10351562E-5, +-2.98023224E-8, 3.612 digits
-	const uint b = as_uint(x)+0x00000800; // round-to-nearest-even: add last bit after truncated mantissa
+	const uint b = as<uint>(x)+0x00000800; // round-to-nearest-even: add last bit after truncated mantissa
 	const uint e = (b&0x7F800000)>>23; // exponent
 	const uint m = b&0x007FFFFF; // mantissa; in line below: 0x007FF800 = 0x00800000-0x00000800 = decimal indicator flag - initial rounding
 	return (b&0x80000000)>>16 | (e>112)*((((e-112)<<11)&0x7800)|m>>12) | ((e<113)&(e>100))*((((0x007FF800+m)>>(124-e))+1)>>1) | (e>127)*0x7FFF; // sign : normalized : denormalized : saturate
@@ -132,7 +129,7 @@ inline float ln(const float x) {
 	return log(x); // natural logarithm
 }
 inline int log2_fast(const float x) {
-	return (as_uint(x)>>23)-127;
+	return (as<uint>(x)>>23)-127;
 }
 inline float degrees(const float radians) {
 	return (180.0f/pif)*radians;
@@ -141,7 +138,7 @@ inline float radians(const float degrees) {
 	return (pif/180.0f)*degrees;
 }
 inline float find_zero(float f(float), float min=-1.0f, float max=1.0f, float offset=0.0f) { // find zero of function f(x) in [min, max] by nested intervals
-	const uint n = log2_fast((max-min)*1.67772162E7f); // evil log2 hack: log2(x)=(as_uint(x)>>23)-127
+	const uint n = log2_fast((max-min)*1.67772162E7f); // evil log2 hack: log2(x)=(as<uint>(x)>>23)-127
 	float m = 0.5f*(min+max);
 	const float s = 2.0f*(float)(f(min)>offset)-1.0f;
 	offset *= s;
@@ -253,7 +250,7 @@ inline double ln(const double x) {
 	return log(x); // natural logarithm
 }
 inline int log2_fast(const double x) {
-	return (as_ulong(x)>>52)-1023;
+	return (as<ulong>(x)>>52)-1023;
 }
 inline double degrees(const double radians) {
 	return (180.0/pi)*radians;
@@ -262,7 +259,7 @@ inline double radians(const double degrees) {
 	return (pi/180.0)*degrees;
 }
 inline double find_zero(double f(double), double min=-1.0, double max=1.0, double offset=0.0) { // find zero of function f(x) in [min, max] by nested intervals
-	const uint n = log2_fast((max-min)*9.007199254740992E15); // evil log2 hack: log2(x)=(as_ulong(x)>>52)-1023
+	const uint n = log2_fast((max-min)*9.007199254740992E15); // evil log2 hack: log2(x)=(as<ulong>(x)>>52)-1023
 	double m = 0.5*(min+max);
 	const double s = 2.0*(double)(f(min)>offset)-1.0;
 	offset *= s;
@@ -387,7 +384,7 @@ inline uint lcm(const uint x, const uint y) { // least common multiple
 	return x*y==0u ? 0u : x*y/gcd(x, y);
 }
 inline uint log2_fast(const uint x) {
-	return (uint)((as_uint((float)x)>>23)-127);
+	return (uint)((as<uint>((float)x)>>23)-127);
 }
 
 inline slong sq(const slong x) {
@@ -452,7 +449,7 @@ inline ulong lcm(const ulong x, const ulong y) { // least common multiple
 	return x*y==0ull ? 0ull : x*y/gcd(x, y);
 }
 inline uint log2_fast(const ulong x) {
-	return (uint)((as_ulong((double)x)>>52)-1023);
+	return (uint)((as<ulong>((double)x)>>52)-1023);
 }
 
 inline int to_int(const float x) {
@@ -1129,6 +1126,8 @@ struct float3x3 { // 3D matrix type
 		for(uint i=0u; i<n; i++) r = r*(*this);
 		return r;
 	}
+
+	bool operator==(float3x3 const&) const noexcept = default;
 };
 inline float3x3 operator+(const float3x3& m, const float x) { // elementwise addition
 	return float3x3(
@@ -2644,18 +2643,13 @@ inline string to_string(ulong x) {
 	return r;
 }
 inline string to_string(slong x) {
-	return x>=0ll ? to_string((ulong)x) : "-"+to_string((ulong)(-x));
+	return ::std::to_string(x);
 }
 inline string to_string(uint x) {
-	string r = "";
-	do {
-		r = (char)(x%10u+48u)+r;
-		x /= 10u;
-	} while(x);
-	return r;
+	return ::std::to_string(x);
 }
 inline string to_string(int x) {
-	return x>=0 ? to_string((uint)x) : "-"+to_string((uint)(-x));
+	return ::std::to_string(x);
 }
 inline string to_string(float x) { // convert float to string with full precision (<string> to_string() prints only 6 decimals)
 	string s = "";
@@ -2687,7 +2681,7 @@ inline string to_string(float x, const uint decimals) { // convert float to stri
 	x += 0.5f/power; // rounding
 	const ulong integral = (ulong)x;
 	const uint decimal = (uint)((x-(float)integral)*power);
-	return s+to_string(integral)+(decimals==0u ? "" : "."+decimal_to_string_float(decimal, min((int)decimals, 8)));
+	return s+to_string(integral)+(decimals==0u ? ""s : "."s+decimal_to_string_float(decimal, min((int)decimals, 8)));
 }
 inline string to_string(double x, const uint decimals) { // convert float to string with specified number of decimals
 	string s = "";
@@ -2796,10 +2790,10 @@ inline string print_time(const double t) { // input: time in seconds, output: fo
 	const uint m = s/      60; s %=       60;
 	const bool dy=t>31556924.5, dd=t>86399.5, dh=t>3599.5, dm=t>59.5; // display years, days, hours, minutes?
 	return (dy?                                 to_string(y)+"y":"")+
-	       (dd?(dy&&d<10?"00":dy&&d<100?"0":"")+to_string(d)+"d":"")+
-	       (dh?(dd&&h<10?"0"               :"")+to_string(h)+"h":"")+
-	       (dm?(dh&&m<10?"0"               :"")+to_string(m)+"m":"")+
-	           (dm&&s<10?"0"               :"")+to_string(s)+"s"    ;
+	       (dd?string(dy&&d<10?"00":dy&&d<100?"0":"")+to_string(d)+"d":"")+
+	       (dh?string(dd&&h<10?"0"               :"")+to_string(h)+"h":"")+
+	       (dm?string(dh&&m<10?"0"               :"")+to_string(m)+"m":"")+
+	           string(dm&&s<10?"0"               :"")+to_string(s)+"s"    ;
 }
 inline string print_progress(const double x, const uint n=10u) {
 	const uint p = (uint)((double)n*x+0.5);

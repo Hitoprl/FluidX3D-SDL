@@ -9,9 +9,18 @@ set(_source_files
     main.cpp
     setup.cpp
     shapes.cpp
+    opencl.cpp
 )
 
 add_executable(${target} ${_source_files})
 
-target_link_libraries(${target} PRIVATE project_warnings project_options pthread OpenCL)
+find_package(ZLIB REQUIRED)
+
+target_link_libraries(${target} PRIVATE project_warnings project_options)
 target_include_directories(${target} PRIVATE include OpenCL/include)
+
+target_link_libraries(${target} PRIVATE
+    pthread
+    OpenCL
+    ZLIB::ZLIB
+)

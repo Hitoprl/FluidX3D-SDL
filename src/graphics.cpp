@@ -7,10 +7,7 @@ std::atomic_bool running = true;
 Camera camera;
 
 // reserved keys for graphics: W,A,S,D, I,J,K,L, F, R,U, V,B, C,VK_SPACE, Y,X, N,M
-//bool key_A=false, key_B=false, key_C=false, key_D=false, key_E=false, key_F=false, key_G=false, key_H=false, key_I=false, key_J=false, key_K=false, key_L=false, key_M=false;
-//bool key_N=false, key_O=false, key_P=false, key_Q=false, key_R=false, key_S=false, key_T=false, key_U=false, key_V=false, key_W=false, key_X=false, key_Y=false, key_Z=false;
-bool key_E=false, key_G=false, key_H=false, key_O=false, key_P=false, key_Q=false, key_T=false, key_Z=false;
-bool key_1=false, key_2=false, key_3=false, key_4=false, key_5=false, key_6=false, key_7=false, key_8=false, key_9=false, key_0=false;
+bool keys[256] = {};
 
 const uint max_light_sources = 100u; // maximal number of light sources
 uint light_sources_n = 0u; // number of light sources
@@ -34,46 +31,12 @@ void update_rotation(const double arx, const double ary) {
 
 void key_bindings(const int key) {
 	camera.key_update = true;
+	if (key < 0 || key >= 256) {
+		return;
+	}
+	keys[key] = !keys[key];
 	switch(key) {
 		// reserved keys for graphics: W,A,S,D, I,J,K,L, R,U, V,B, C,VK_SPACE, Y,X, N,M
-		//case 'A': key_A = !key_A; break;
-		//case 'B': key_B = !key_B; break;
-		//case 'C': key_C = !key_C; break;
-		//case 'D': key_D = !key_D; break;
-		case 'E': key_E = !key_E; break;
-		//case 'F': key_F = !key_F; break;
-		case 'G': key_G = !key_G; break;
-		case 'H': key_H = !key_H; break;
-		//case 'I': key_I = !key_I; break;
-		//case 'J': key_J = !key_J; break;
-		//case 'K': key_K = !key_K; break;
-		//case 'L': key_L = !key_L; break;
-		//case 'M': key_M = !key_M; break;
-		//case 'N': key_N = !key_N; break;
-		case 'O': key_O = !key_O; break;
-		case 'P': key_P = !key_P; break;
-		case 'Q': key_Q = !key_Q; break;
-		//case 'R': key_R = !key_R; break;
-		//case 'S': key_S = !key_S; break;
-		case 'T': key_T = !key_T; break;
-		//case 'U': key_U = !key_U; break;
-		//case 'V': key_V = !key_V; break;
-		//case 'W': key_W = !key_W; break;
-		//case 'X': key_X = !key_X; break;
-		//case 'Y': key_Y = !key_Y; break;
-		case 'Z': key_Z = !key_Z; break;
-
-		case '1': key_1 = !key_1; break;
-		case '2': key_2 = !key_2; break;
-		case '3': key_3 = !key_3; break;
-		case '4': key_4 = !key_4; break;
-		case '5': key_5 = !key_5; break;
-		case '6': key_6 = !key_6; break;
-		case '7': key_7 = !key_7; break;
-		case '8': key_8 = !key_8; break;
-		case '9': key_9 = !key_9; break;
-		case '0': key_0 = !key_0; break;
-
 		case 'R': autorotation = !autorotation; break;
 		case 'U': lockmouse = !lockmouse; break;
 		case 'I':
@@ -813,7 +776,7 @@ Image* frame = nullptr;
 void draw_bitmap(const void* buffer) {
 	std::copy((int*)buffer, (int*)buffer+camera.width*camera.height, frame->data());
 }
-void draw_label(const Color& c, const string& s, const int x, const int y) {}
+void draw_label(const Color&, const string&, const int, const int) {}
 
 uint ltw=0u, lth=0u;
 uint fontwidth=8u, fontheight=16u;

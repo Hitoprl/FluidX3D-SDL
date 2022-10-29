@@ -1,7 +1,10 @@
 #include "lbm.hpp"
 #include "info.hpp"
 #include "graphics.hpp"
+#include "opencl.hpp"
 #include "units.hpp"
+
+using namespace std::literals;
 
 Units units; // for unit conversion
 
@@ -219,7 +222,7 @@ void LBM::run(const ulong steps) { // initializes the LBM simulation (copies dat
 	Clock clock;
 	for(ulong i=1ull; i<=steps; i++) { // run LBM in loop, runs infinitely long if steps = max_ulong
 #if defined(CONSOLE_GRAPHICS)||defined(WINDOWS_GRAPHICS)
-		while(!key_P&&running) sleep(0.016);
+		while(!keys['P']&&running) sleep(0.016);
 		if(!running) break;
 #endif // CONSOLE_GRAPHICS || WINDOWS_GRAPHICS
 		clock.start();
@@ -439,8 +442,18 @@ void LBM::voxelize_mesh(const Mesh* mesh, const uchar flag) { // voxelize triang
 	flags.read_from_device();
 }
 void LBM::voxelize_stl(const string& path, const float3& center, const float3x3& rotation, const float size, const uchar flag) { // voxelize triangle mesh
-	const Mesh* mesh = read_stl(path, float3(get_Nx(), get_Ny(), get_Nz()), center, rotation, size);
+	float3 box_size{get_Nx(), get_Ny(), get_Nz()};
+	auto const cache_path = path + ".cache";
+
+	if (load_voxelized_mesh_from_disk(cache_path, flags, device, box_size, center, rotation, size))
+	{
+		flags.write_to_device();
+		return;
+	}
+
+	const Mesh* mesh = read_stl(path, box_size, center, rotation, size);
 	voxelize_mesh(mesh, flag);
+	save_voxelized_mesh_to_disk(cache_path, flags, device, box_size, center, rotation, size);
 	delete mesh;
 }
 void LBM::voxelize_stl(const string& path, const float3x3& rotation, const float size, const uchar flag) { // read and voxelize binary .stl file (place in box center)
@@ -559,7 +572,7 @@ string LBM::device_defines() const { return
 
 #ifdef GRAPHICS
 void LBM::Graphics::default_settings() {
-	key_1 = true;
+	keys['1'] = true;
 }
 
 void LBM::Graphics::allocate(Device& device) {
@@ -607,20 +620,20 @@ void* LBM::Graphics::draw_frame() {
 #endif // WINDOWS_GRAPHICS or CONSOLE_GRAPHICS
 	t_last_frame = lbm->get_t();
 #ifndef UPDATE_FIELDS
-	if(key_2||key_3||key_4) lbm->update_fields(); // only call update_fields() if the time step has changed since the last rendered frame
+	if(keys['2']||keys['3']||keys['4']) lbm->update_fields(); // only call update_fields() if the time step has changed since the last rendered frame
 #endif // UPDATE_FIELDS
 	camera.key_update = false;
 
 	if(camera_update) camera_parameters.write_to_device(false); // camera_parameters PCIe transfer and kernel_clear execution can happen simulataneously
 	kernel_clear.run();
 #ifdef SURFACE
-	if(key_6) kernel_graphics_raytrace_phi.run();
-	if(key_5) kernel_graphics_rasterize_phi.run();
+	if(keys['6']) kernel_graphics_raytrace_phi.run();
+	if(keys['5']) kernel_graphics_rasterize_phi.run();
 #endif // SURFACE
-	if(key_1) kernel_graphics_flags.run();
-	if(key_2) kernel_graphics_field.run();
-	if(key_3) kernel_graphics_streamline.run();
-	if(key_4) kernel_graphics_q.run();
+	if(keys['1']) kernel_graphics_flags.run();
+	if(keys['2']) kernel_graphics_field.run();
+	if(keys['3']) kernel_graphics_streamline.run();
+	if(keys['4']) kernel_graphics_q.run();
 
 	bitmap.read_from_device();
 	return (void*)bitmap.data();
@@ -696,7 +709,7 @@ void encode_image(Image* image, const string& filename, const string& extension,
 void LBM::Graphics::write_frame(const string& path, const string& name, const string& extension, bool print_preview) { // save current frame as .png file (smallest file size, but slow)
 	write_frame(0u, 0u, camera.width, camera.height, path, name, extension, print_preview);
 }
-void LBM::Graphics::write_frame(const uint x1, const uint y1, const uint x2, const uint y2, const string& path, const string& name, const string& extension, bool print_preview) { // save a cropped current frame with two corner points (x1,y1) and (x2,y2)
+void LBM::Graphics::write_frame(const uint x1, const uint y1, const uint x2, const uint y2, const string& path, const string& name, const string& extension, bool) { // save a cropped current frame with two corner points (x1,y1) and (x2,y2)
 	info.allow_rendering = false; // temporarily disable interactive rendering
 	draw_frame(); // make sure the frame is fully rendered
 	const string filename = lbm->default_filename(path, name, extension);

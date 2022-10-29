@@ -74,7 +74,7 @@ string get_opencl_c_code() {
 
 // integer functions
 #define abs(x) // |x|
-#define clz(x) // count leading 0 bits, slow, instead use as_uint((float)((x&0x07FF)<<12))>>23
+#define clz(x) // count leading 0 bits, slow, instead use as<uint>((float)((x&0x07FF)<<12))>>23
 #define mad_sat(a,b,c) // a*b+c
 #define max(x,y)
 #define min(x,y)

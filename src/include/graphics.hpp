@@ -63,15 +63,14 @@ struct Camera {
 			case 11: return R.zx;
 			case 12: return R.zy;
 			case 13: return R.zz;
-			case 14: return as_float((uint)vr<<31|(uint)tv<<30|((uint)float_to_half(eye_distance)&0xFFFF)); // stereoscopic rendering parameters
+			case 14: return as<float>((uint)vr<<31|(uint)tv<<30|((uint)float_to_half(eye_distance)&0xFFFF)); // stereoscopic rendering parameters
 			default: return 0.0f;
 		}
 	}
 };
 
 extern Camera camera;
-extern bool key_E, key_F, key_G, key_H, key_O, key_P, key_Q, key_T, key_Z; // defined in graphics.cpp
-extern bool key_1, key_2, key_3, key_4, key_5, key_6, key_7, key_8, key_9, key_0; // defined in graphics.cpp
+extern bool keys[256];
 
 struct Color {
 	uchar r, g, b;
