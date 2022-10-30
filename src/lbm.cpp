@@ -615,7 +615,7 @@ bool LBM::Graphics::update_camera() {
 }
 void* LBM::Graphics::draw_frame() {
 	const bool camera_update = update_camera();
-#if defined(WINDOWS_GRAPHICS)||defined(CONSOLE_GRAPHICS)
+#if defined(WINDOWS_GRAPHICS)||defined(CONSOLE_GRAPHICS)||defined(SDL_GRAPHICS)
 	if(!camera_update&&!camera.key_update&&lbm->get_t()==t_last_frame) return (void*)bitmap.data(); // don't render a new frame if the scene hasn't changed since last frame
 #endif // WINDOWS_GRAPHICS or CONSOLE_GRAPHICS
 	t_last_frame = lbm->get_t();
@@ -709,7 +709,8 @@ void encode_image(Image* image, const string& filename, const string& extension,
 void LBM::Graphics::write_frame(const string& path, const string& name, const string& extension, bool print_preview) { // save current frame as .png file (smallest file size, but slow)
 	write_frame(0u, 0u, camera.width, camera.height, path, name, extension, print_preview);
 }
-void LBM::Graphics::write_frame(const uint x1, const uint y1, const uint x2, const uint y2, const string& path, const string& name, const string& extension, bool) { // save a cropped current frame with two corner points (x1,y1) and (x2,y2)
+void LBM::Graphics::write_frame(const uint x1, const uint y1, const uint x2, const uint y2, const string& path, const string& name, const string& extension, bool print_preview) { // save a cropped current frame with two corner points (x1,y1) and (x2,y2)
+    (void)print_preview;
 	info.allow_rendering = false; // temporarily disable interactive rendering
 	draw_frame(); // make sure the frame is fully rendered
 	const string filename = lbm->default_filename(path, name, extension);

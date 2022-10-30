@@ -90,8 +90,9 @@ void set_light(const uint i, const float3& p);
 
 void draw_bitmap(const void* buffer);
 void draw_label(const Color& c, const string& s, const int x, const int y);
+void set_cursor_pos(int x, int y);
 
-#ifdef WINDOWS_GRAPHICS
+#if defined(WINDOWS_GRAPHICS) || defined(SDL_GRAPHICS)
 
 #define GRAPHICS_CONSOLE
 //#define SKIP_VISIBILITY_CHECKS // makes CPU graphics without polygons 40% faster

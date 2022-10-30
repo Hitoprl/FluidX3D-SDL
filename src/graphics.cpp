@@ -18,10 +18,20 @@ double mx=0.0, my=0.0, dmx=0.0, dmy=0.0; // mouse position
 float zo=0.0f, dzo=0.0f; // zoom and perspective
 float fl=0.0f, fvel=0.05f; // free camera speed
 
-void update_rotation(const double arx, const double ary) {
 #ifdef WINDOWS_GRAPHICS
-	SetCursorPos(camera.width/2, camera.height/2);
-#endif // WINDOWS_GRAPHICS
+void set_cursor_pos(int x, int y)
+{
+	SetCursorPos(x, y);
+}
+#elif !defined(SDL_GRAPHICS)
+void set_cursor_pos(int, int)
+{
+	// Do nothing
+}
+#endif
+
+void update_rotation(const double arx, const double ary) {
+	set_cursor_pos(camera.width/2, camera.height/2);
 	camera.rx += arx*pi/180.0;
 	camera.ry += ary*pi/180.0;
 	camera.rx = fmod(camera.rx, 2.0*pi);
@@ -98,7 +108,7 @@ void key_bindings(const int key) {
 			exit(0);
 	}
 
-#ifndef WINDOWS_GRAPHICS
+#if !defined(WINDOWS_GRAPHICS) && !defined(SDL_GRAPHICS)
 	if(camera.free) { // move free camera
 		if(key=='W') {
 			camera.pos.x += camera.R.xy*camera.R.yz*fvel;
@@ -856,7 +866,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-#else // GRAPHICS
+#elif !defined(SDL_GRAPHICS) // only GRAPHICS defined
 
 void draw_bitmap(const void* buffer) {}
 void draw_label(const Color& c, const string& s, const int x, const int y) {}
@@ -882,5 +892,5 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-#endif // GRAPHICS
+#endif // !defined(SDL_GRAPHICS)
 #endif // GRAPHICS

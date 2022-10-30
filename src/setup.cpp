@@ -171,7 +171,7 @@
 	const float f = units.f_from_u_rectangular_duct(w, D, 1.0f, nu, u);
 	LBM lbm(to_uint(w), 12u*to_uint(D), to_uint(h), nu, 0.0f, f, 0.0f);
 	// #############################################################################################################################################################################################
-	const uint N=lbm.get_N(), Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); for(uint n=0u, x=0u, y=0u, z=0u; n<N; n++, lbm.coordinates(n, x, y, z)) {
+	const uint N=lbm.get_N(), Nx=lbm.get_Nx(), Nz=lbm.get_Nz(); for(uint n=0u, x=0u, y=0u, z=0u; n<N; n++, lbm.coordinates(n, x, y, z)) {
 		// ########################################################################### define geometry #############################################################################################
 		lbm.u.y[n] = 0.1f*u;
 		if(cylinder(x, y, z, float3(lbm.center().x, 2.0f*D, lbm.center().z), float3(Nx, 0u, 0u), 0.5f*D)) lbm.flags[n] = TYPE_S;
@@ -242,7 +242,7 @@
 
 
 
-void main_setup() { // Concorde
+/*void main_setup() { // Concorde
 	// ######################################################### define simulation box size, viscosity and volume force ############################################################################
 	const uint L = 256u;
 	const float Re = 1000000.0f;
@@ -445,7 +445,7 @@ void main_setup() { // Star Wars TIE fighter
 
 
 
-/*void main_setup() { // F1 car
+void main_setup() { // F1 car
 	// ######################################################### define simulation box size, viscosity and volume force ############################################################################
 	const uint L = 256u; // 2152u on 8x MI200
 	const float kmh = 100.0f;
@@ -463,7 +463,7 @@ void main_setup() { // Star Wars TIE fighter
 	LBM lbm(L, L*2u, L/2u, nu);
 	// #############################################################################################################################################################################################
 	const float3 center = float3(lbm.center().x, 0.525f*size, 0.116f*size);
-	lbm.voxelize_stl(get_exe_path()+"../stl/Ferrari_SF71H_V5.stl", center, size); // https://www.thingiverse.com/thing:2990512/files
+	lbm.voxelize_stl(get_exe_path()+"../../stl/Ferrari_SF71H_V5.stl", center, size); // https://www.thingiverse.com/thing:2990512/files
 	const uint N=lbm.get_N(), Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); for(uint n=0u, x=0u, y=0u, z=0u; n<N; n++, lbm.coordinates(n, x, y, z)) {
 		// ########################################################################### define geometry #############################################################################################
 		if(lbm.flags[n]!=TYPE_S) lbm.u.y[n] = u;
