@@ -246,7 +246,7 @@ public:
 		Image* get_skybox_image() const { return skybox_image; }
 #endif // SURFACE
 
-		void allocate(Device& device); // allocate memory for bitmap and zbuffer
+		void allocate(Device& device, bool set_defaults); // allocate memory for bitmap and zbuffer
 		void* draw_frame(); // main rendering function, calls rendering kernels
 		string device_defines() const; // returns preprocessor constants for embedding in OpenCL C code
 

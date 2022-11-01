@@ -29,7 +29,7 @@ LBM::LBM(const uint Nx, const uint Ny, const uint Nz, const float nu, const floa
 	this->device = Device(select_device<0 ? select_device_with_most_flops(devices) : select_device_with_id((uint)select_device, devices), opencl_c_code);
 	allocate(device); // lbm first
 #ifdef GRAPHICS
-	graphics.allocate(device); // graphics after lbm
+	graphics.allocate(device, true); // graphics after lbm
 #endif // GRAPHICS
 	info.initialize(this);
 }
@@ -47,7 +47,7 @@ void LBM::do_reallocate_graphics()
 {
 	if (schedule_graphics_reallocation)
 	{
-		graphics.allocate(device);
+		graphics.allocate(device, false);
 		schedule_graphics_reallocation = false;
 	}
 }
@@ -237,10 +237,10 @@ void LBM::run(const ulong steps) { // initializes the LBM simulation (copies dat
 	}
 	Clock clock;
 	for(ulong i=1ull; i<=steps; i++) { // run LBM in loop, runs infinitely long if steps = max_ulong
-#if defined(CONSOLE_GRAPHICS)||defined(WINDOWS_GRAPHICS)
+#if defined(CONSOLE_GRAPHICS)||defined(WINDOWS_GRAPHICS)||defined(SDL_GRAPHICS)
 		while(!keys['P']&&running) sleep(0.016);
 		if(!running) break;
-#endif // CONSOLE_GRAPHICS || WINDOWS_GRAPHICS
+#endif // CONSOLE_GRAPHICS || WINDOWS_GRAPHICS || SDL_GRAPHICS
 		clock.start();
 		do_time_step(); // execute one LBM time step
 		info.update(clock.stop());
@@ -591,14 +591,16 @@ void LBM::Graphics::default_settings() {
 	keys['1'] = true;
 }
 
-void LBM::Graphics::allocate(Device& device) {
+void LBM::Graphics::allocate(Device& device, bool set_defaults) {
 	bitmap = Memory<uint>(device, camera.width*camera.height);
 	zbuffer = Memory<int>(device, camera.width*camera.height, 1u, false);
 	camera_parameters = Memory<float>(device, 15u);
 	kernel_clear = Kernel(device, bitmap.length(), "graphics_clear", bitmap, zbuffer);
 
-	set_zoom(0.5f*(float)fmax(fmax(lbm->get_Nx(), lbm->get_Ny()), lbm->get_Nz()));
-	default_settings();
+	if (set_defaults) {
+		set_zoom(0.5f*(float)fmax(fmax(lbm->get_Nx(), lbm->get_Ny()), lbm->get_Nz()));
+		default_settings();
+	}
 
 	kernel_graphics_flags = Kernel(device, lbm->flags.length(), "graphics_flags", lbm->flags, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
 	kernel_graphics_field = Kernel(device, lbm->flags.length(), "graphics_field", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
