@@ -4,6 +4,8 @@
 #ifdef SDL_GRAPHICS
 
 #include "SDL_FontCache.h"
+#include "info.hpp"
+#include "lbm.hpp"
 
 #include <SDL.h>
 #include <SDL_render.h>
@@ -186,7 +188,6 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
 
 	thread compute_thread(main_physics); // start main_physics() in a new thread
-	//thread key_thread(key_detection);
 
 	Clock clock;
 	double frametime = 1.0;
@@ -204,9 +205,11 @@ int main(int argc, char* argv[]) {
                 break;
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    if (!info.lbm) break;
                     int w, h;
                     SDL_GetRendererOutputSize(screen_renderer.get(), &w, &h);
                     resize_camera(w, h);
+                    info.lbm->reallocate_graphics();
                 }
                 break;
             }
@@ -227,7 +230,6 @@ int main(int argc, char* argv[]) {
 		// ##########################################################################
 	}
 	compute_thread.join();
-	//key_thread.join();
 	return 0;
 }
 

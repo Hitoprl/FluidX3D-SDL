@@ -37,6 +37,22 @@ LBM::~LBM() {
 	info.print_finalize();
 }
 
+#ifdef GRAPHICS
+void LBM::reallocate_graphics()
+{
+	schedule_graphics_reallocation = true;
+}
+
+void LBM::do_reallocate_graphics()
+{
+	if (schedule_graphics_reallocation)
+	{
+		graphics.allocate(device);
+		schedule_graphics_reallocation = false;
+	}
+}
+#endif // GRAPHICS
+
 void LBM::sanity_checks_constructor() { // sanity checks on grid resolution and parameters
 	if(Nx*Ny*Nz==0u || (Nx*Ny*Nz)%WORKGROUP_SIZE!=0u) { // sanity checks for simulation box size
 		int ws=WORKGROUP_SIZE;
@@ -584,10 +600,10 @@ void LBM::Graphics::allocate(Device& device) {
 	set_zoom(0.5f*(float)fmax(fmax(lbm->get_Nx(), lbm->get_Ny()), lbm->get_Nz()));
 	default_settings();
 
-	kernel_graphics_flags = Kernel(device, lbm->flags.length(), "graphics_flags", lbm->flags, camera_parameters, bitmap, zbuffer);
-	kernel_graphics_field = Kernel(device, lbm->flags.length(), "graphics_field", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer);
-	kernel_graphics_streamline = Kernel(device, lbm->flags.length()/(cb(GRAPHICS_STREAMLINE_SPARSE)), "graphics_streamline", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer);
-	kernel_graphics_q = Kernel(device, lbm->flags.length(), "graphics_q", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer);
+	kernel_graphics_flags = Kernel(device, lbm->flags.length(), "graphics_flags", lbm->flags, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
+	kernel_graphics_field = Kernel(device, lbm->flags.length(), "graphics_field", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
+	kernel_graphics_streamline = Kernel(device, lbm->flags.length()/(cb(GRAPHICS_STREAMLINE_SPARSE)), "graphics_streamline", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
+	kernel_graphics_q = Kernel(device, lbm->flags.length(), "graphics_q", lbm->flags, lbm->u, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
 
 #ifdef FORCE_FIELD
 	kernel_graphics_flags.add_parameters(lbm->F);
@@ -595,8 +611,8 @@ void LBM::Graphics::allocate(Device& device) {
 
 #ifdef SURFACE
 	skybox = Memory<uint>(device, skybox_image->width()*skybox_image->height(), 1u, (uint*)skybox_image->data());
-	kernel_graphics_rasterize_phi = Kernel(device, lbm->phi.length(), "graphics_rasterize_phi", lbm->phi, camera_parameters, bitmap, zbuffer);
-	kernel_graphics_raytrace_phi = Kernel(device, bitmap.length(), "graphics_raytrace_phi", lbm->phi, lbm->flags, skybox, camera_parameters, bitmap);
+	kernel_graphics_rasterize_phi = Kernel(device, lbm->phi.length(), "graphics_rasterize_phi", lbm->phi, camera_parameters, bitmap, zbuffer, camera.width, camera.height);
+	kernel_graphics_raytrace_phi = Kernel(device, bitmap.length(), "graphics_raytrace_phi", lbm->phi, lbm->flags, skybox, camera_parameters, bitmap, camera.width, camera.height);
 #endif // SURFACE
 
 #ifdef TEMPERATURE
@@ -641,8 +657,6 @@ void* LBM::Graphics::draw_frame() {
 string LBM::Graphics::device_defines() const { return
 	"\n	#define GRAPHICS"
 	"\n	#define def_background_color " +to_string(GRAPHICS_BACKGROUND_COLOR)+"u"
-	"\n	#define def_screen_width "     +to_string(camera.width)+"u"
-	"\n	#define def_screen_height "    +to_string(camera.height)+"u"
 	"\n	#define def_n "                +to_string(1.333f)+"f" // refractive index of water
 	"\n	#define def_scale_u "          +to_string(0.57735027f/(GRAPHICS_U_MAX))+"f"
 	"\n	#define def_scale_Q_min "      +to_string(GRAPHICS_Q_CRITERION)+"f"

@@ -29,7 +29,11 @@ void main_label(const double frametime) {
 }
 
 void main_graphics() {
-	if(info.allow_rendering) draw_bitmap(info.lbm->graphics.draw_frame());
+	if(info.allow_rendering)
+	{
+		info.lbm->do_reallocate_graphics();
+		draw_bitmap(info.lbm->graphics.draw_frame());
+	}
 }
 #endif // GRAPHICS
 

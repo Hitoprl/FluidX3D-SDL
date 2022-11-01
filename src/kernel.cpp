@@ -1,7 +1,8 @@
 #include "kernel.hpp" // note: unbalanced round brackets () are not allowed and string literals can't be arbitrarily long, so periodically interrupt with )+R(
 string opencl_c_container() { return R( // ########################## begin of OpenCL C code ####################################################################
 
-
+unsigned screen_width;
+unsigned screen_height;
 
 // ################################################## utility functions ##################################################
 
@@ -184,13 +185,13 @@ string opencl_c_container() { return R( // ########################## begin of O
 }
 )+R(bool is_off_screen(const int x, const int y, const int stereo) {
 	switch(stereo) {
-		default: return x<                 0||x>=def_screen_width  ||y<0||y>=def_screen_height; // entire screen
-		case -1: return x<                 0||x>=def_screen_width/2||y<0||y>=def_screen_height; // left half
-		case +1: return x<def_screen_width/2||x>=def_screen_width  ||y<0||y>=def_screen_height; // right half
+		default: return x<             0||x>=screen_width  ||y<0||y>=screen_height; // entire screen
+		case -1: return x<             0||x>=screen_width/2||y<0||y>=screen_height; // left half
+		case +1: return x<screen_width/2||x>=screen_width  ||y<0||y>=screen_height; // right half
 	}
 }
 )+R(void draw(const int x, const int y, const float z, const uint color, global uint* bitmap, volatile global int* zbuffer, const int stereo) {
-	const int index=x+y*def_screen_width, iz=(int)(z*(2147483647.0f/10000.0f)); // use int z-buffer and atomic_max to minimize noise in image
+	const int index=x+y*screen_width, iz=(int)(z*(2147483647.0f/10000.0f)); // use int z-buffer and atomic_max to minimize noise in image
 	if(!is_off_screen(x, y, stereo)&&iz>atomic_max(&zbuffer[index], iz)) bitmap[index] = color; // only draw if point is on screen and first in zbuffer
 }
 )+R(bool convert(int* rx, int* ry, float* rz, const float3 p, const float* camera_cache, const int stereo) { // 3D -> 2D
@@ -217,8 +218,8 @@ string opencl_c_container() { return R( // ########################## begin of O
 	const float rs = zoom*dis/(dis-r.z*zoom); // perspective (reciprocal is more efficient)
 	if(rs<=0.0f) return false; // point is behins camera
 	const float tv = ((as_int(camera_cache[14])>>30)&0x1)&&stereo!=0 ? 0.5f : 1.0f;
-	r.x = ((Rxx*t.x+Rxy*t.y+Rxz*t.z)*rs+(float)stereo*eye_distance)*tv+(0.5f+(float)stereo*0.25f)*(float)def_screen_width; // x position on screen
-	r.y =  (Ryx*t.x+Ryy*t.y+Ryz*t.z)*rs+0.5f*(float)def_screen_height; // y position on screen
+	r.x = ((Rxx*t.x+Rxy*t.y+Rxz*t.z)*rs+(float)stereo*eye_distance)*tv+(0.5f+(float)stereo*0.25f)*(float)screen_width; // x position on screen
+	r.y =  (Ryx*t.x+Ryy*t.y+Ryz*t.z)*rs+0.5f*(float)screen_height; // y position on screen
 	*rx = (int)(r.x+0.5f);
 	*ry = (int)(r.y+0.5f);
 	*rz = r.z;
@@ -232,9 +233,9 @@ string opencl_c_container() { return R( // ########################## begin of O
 		const float rs = zoom*dis/(dis-rz*zoom);
 		const int radius = (int)(rs*r+0.5f);
 		switch(stereo) {
-			default: if(rx<                       -radius||rx>=(int)def_screen_width  +radius || ry<-radius||ry>=(int)def_screen_height+radius) return; break; // cancel drawing if circle is off screen
-			case -1: if(rx<                       -radius||rx>=(int)def_screen_width/2+radius || ry<-radius||ry>=(int)def_screen_height+radius) return; break;
-			case +1: if(rx<(int)def_screen_width/2-radius||rx>=(int)def_screen_width  +radius || ry<-radius||ry>=(int)def_screen_height+radius) return; break;
+			default: if(rx<                   -radius||rx>=(int)screen_width  +radius || ry<-radius||ry>=(int)screen_height+radius) return; break; // cancel drawing if circle is off screen
+			case -1: if(rx<                   -radius||rx>=(int)screen_width/2+radius || ry<-radius||ry>=(int)screen_height+radius) return; break;
+			case +1: if(rx<(int)screen_width/2-radius||rx>=(int)screen_width  +radius || ry<-radius||ry>=(int)screen_height+radius) return; break;
 		}
 		int d=-radius, x=radius, y=0; // Bresenham algorithm for circle
 		while(x>=y) {
@@ -581,9 +582,9 @@ string opencl_c_container() { return R( // ########################## begin of O
 	const bool  vr  = (as_int(camera_cache[14])>>31)&0x1;
 	const float rtv = (as_int(camera_cache[14])>>30)&0x1 ? 2.0f : 1.0f;
 	const float eye_distance = vload_half(28, (half*)camera_cache);
-	const float stereo = (x<(int)def_screen_width/2 ? -1.0f : 1.0f);
+	const float stereo = (x<(int)screen_width/2 ? -1.0f : 1.0f);
 	float3 p0 = (float3)(!vr ? 0.0f : stereo*eye_distance/zoom, 0.0f, dis/zoom);
-	float3 p1 = p0+normalize((float3)(!vr ? (float)(x-(int)def_screen_width/2) : ((float)(x-(int)def_screen_width/2)-stereo*(float)(def_screen_width/4u))*rtv-stereo*eye_distance, (float)(y-(int)def_screen_height/2), -dis));
+	float3 p1 = p0+normalize((float3)(!vr ? (float)(x-(int)screen_width/2) : ((float)(x-(int)screen_width/2)-stereo*(float)(screen_width/4u))*rtv-stereo*eye_distance, (float)(y-(int)screen_height/2), -dis));
 	const float x0 = Rxx*p0.x+Ryx*p0.y+Rzx*p0.z; // reverse rotate p0
 	const float y0 = Rxy*p0.x+Ryy*p0.y+Rzy*p0.z;
 	const float z0 = Rxz*p0.x+Ryz*p0.y+Rzz*p0.z;
@@ -777,10 +778,10 @@ string opencl_c_container() { return R( // ########################## begin of O
 }
 )+R(bool is_in_camera_frustrum(const float3 p, const float* camera_cache) { // returns true if point is located in camera frustrum
 	const float vr = (float)((as_int(camera_cache[14])>>31)&0x1);
-	const ray r00 = get_camray(0,                       0                       , camera_cache); // get 4 edge vectors of frustrum
-	const ray r01 = get_camray((int)def_screen_width-1, 0                       , camera_cache);
-	const ray r10 = get_camray(0,                       (int)def_screen_height-1, camera_cache);
-	const ray r11 = get_camray((int)def_screen_width-1, (int)def_screen_height-1, camera_cache);
+	const ray r00 = get_camray(0,                   0                   , camera_cache); // get 4 edge vectors of frustrum
+	const ray r01 = get_camray((int)screen_width-1, 0                   , camera_cache);
+	const ray r10 = get_camray(0,                   (int)screen_height-1, camera_cache);
+	const ray r11 = get_camray((int)screen_width-1, (int)screen_height-1, camera_cache);
 	const float3 plane_n_top    = cross(r00.direction, r01.direction); // get 4 frustrum planes
 	const float3 plane_n_bottom = cross(r11.direction, r10.direction);
 	const float3 plane_n_left   = cross(r10.direction, r00.direction);
@@ -1915,10 +1916,13 @@ string opencl_c_container() { return R( // ########################## begin of O
 )+"#ifdef GRAPHICS"+R(
 
 )+"#ifndef FORCE_FIELD"+R(
-)+R(kernel void graphics_flags(const global uchar* flags, const global float* camera, global uint* bitmap, global int* zbuffer) {
+)+R(kernel void graphics_flags(const global uchar* flags, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h) {
 )+"#else"+R( // FORCE_FIELD
-)+R(kernel void graphics_flags(const global uchar* flags, const global float* camera, global uint* bitmap, global int* zbuffer, const global float* F) {
+)+R(kernel void graphics_flags(const global uchar* flags, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h, const global float* F) {
 )+"#endif"+R( // FORCE_FIELD
+	screen_width = w;
+	screen_height = h;
+
 	const uint n = get_global_id(0);
 	const uchar flagsn = flags[n]; // cache flags
 	const uchar flagsn_bo = flagsn&TYPE_BO; // extract boundary flags
@@ -1982,7 +1986,9 @@ string opencl_c_container() { return R( // ########################## begin of O
 )+"#endif"+R( // FORCE_FIELD
 }
 
-)+R(kernel void graphics_field(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer) {
+)+R(kernel void graphics_field(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h) {
+	screen_width = w;
+	screen_height = h;
 	const uint n = get_global_id(0);
 )+"#ifndef MOVING_BOUNDARIES"+R(
 	if(flags[n]&(TYPE_S|TYPE_E|TYPE_I|TYPE_G)) return;
@@ -2000,10 +2006,13 @@ string opencl_c_container() { return R( // ########################## begin of O
 }
 
 )+"#ifndef GRAPHICS_TEMPERATURE"+R(
-)+R(kernel void graphics_streamline(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer) {
+)+R(kernel void graphics_streamline(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h) {
 )+"#else"+R( // GRAPHICS_TEMPERATURE
-)+R(kernel void graphics_streamline(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer, const global float* T) {
+)+R(kernel void graphics_streamline(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h, const global float* T) {
 )+"#endif"+R( // GRAPHICS_TEMPERATURE
+	screen_width = w;
+	screen_height = h;
+
 	const uint n = get_global_id(0);
 	if(n>=(uint)def_N/cb(def_streamline_sparse)) return;
 	const uint z = n/((def_Nx/def_streamline_sparse)*(def_Ny/def_streamline_sparse)); // disassemble 1D index to 3D coordinates
@@ -2051,7 +2060,9 @@ string opencl_c_container() { return R( // ########################## begin of O
 	draw_line(p-(0.5f/ul)*un, p+(0.5f/ul)*un, c, camera_cache, bitmap, zbuffer);
 }
 
-)+R(kernel void graphics_q(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer) {
+)+R(kernel void graphics_q(const global uchar* flags, const global float* u, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h) {
+	screen_width = w;
+	screen_height = h;
 	const uint n = get_global_id(0);
 	const uint3 xyz = coordinates(n);
 	if(xyz.x==def_Nx-1u || xyz.y==def_Ny-1u || xyz.z==def_Nz-1u) return;
@@ -2152,7 +2163,9 @@ string opencl_c_container() { return R( // ########################## begin of O
 }
 
 )+"#ifdef SURFACE"+R(
-)+R(kernel void graphics_rasterize_phi(const global float* phi, const global float* camera, global uint* bitmap, global int* zbuffer) { // marching cubes
+)+R(kernel void graphics_rasterize_phi(const global float* phi, const global float* camera, global uint* bitmap, global int* zbuffer, unsigned w, unsigned h) { // marching cubes
+	screen_width = w;
+	screen_height = h;
 	const uint n = get_global_id(0);
 	const uint3 xyz = coordinates(n);
 	if(xyz.x==def_Nx-1u || xyz.y==def_Ny-1u || xyz.z==def_Nz-1u) return;
@@ -2220,15 +2233,18 @@ string opencl_c_container() { return R( // ########################## begin of O
 	return color_reflect;
 }
 
-)+R(kernel void graphics_raytrace_phi(const global float* phi, const global uchar* flags, const global uint* skybox, const global float* camera, global uint* bitmap) { // marching cubes
+)+R(kernel void graphics_raytrace_phi(const global float* phi, const global uchar* flags, const global uint* skybox, const global float* camera, global uint* bitmap, unsigned w, unsigned h) { // marching cubes
+	screen_width = w;
+	screen_height = h;
+
 	const uint gid = get_global_id(0); // workgroup size alignment is critical
 	const uint lid = get_local_id(0); // make workgropus not horizontal stripes of pixels, but 8x8 rectangular (close to square) tiles
 	const uint lsi = get_local_size(0); // (50% performance boost due to more coalesced memory access)
-	const uint tile_width=8u, tile_height=lsi/tile_width, tiles_x=def_screen_width/tile_width;
+	const uint tile_width=8u, tile_height=lsi/tile_width, tiles_x=screen_width/tile_width;
 	const int lx=lid%tile_width, ly=lid/tile_width;
 	const int tx=(gid/lsi)%tiles_x, ty=(gid/lsi)/tiles_x;
 	const int x=tx*tile_width+lx, y=ty*tile_height+ly;
-	const uint n = x+y*def_screen_width;
+	const uint n = x+y*screen_width;
 	float camera_cache[15]; // cache parameters in case the kernel draws more than one shape
 	for(uint i=0u; i<15u; i++) camera_cache[i] = camera[i];
 	ray camray = get_camray(x, y, camera_cache);

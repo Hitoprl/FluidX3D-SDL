@@ -12,6 +12,7 @@ private:
 	Kernel kernel_update_fields; // reads DDFs and updates (rho, u, T) in device memory
 	Memory<fpxx> fi; // LBM density distribution functions (DDFs); only exist in device memory
 	ulong t_last_update_fields = 0ull; // optimization to not call kernel_update_fields multiple times if (rho, u, T) are already up-to-date
+	bool schedule_graphics_reallocation = false; // Schedule a graphics reallocation for screen resizing
 
 #if defined(D2Q9)
 	const uint velocity_set = 9u;
@@ -263,5 +264,8 @@ public:
 
 	}; // Graphics
 	Graphics graphics;
+
+	void reallocate_graphics();
+	void do_reallocate_graphics();
 #endif // GRAPHICS
 }; // LBM
