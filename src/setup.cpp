@@ -445,7 +445,7 @@ void main_setup() { // Star Wars TIE fighter
 
 
 
-void main_setup() { // F1 car
+/*void main_setup() { // F1 car
 	// ######################################################### define simulation box size, viscosity and volume force ############################################################################
 	const uint L = 256u; // 2152u on 8x MI200
 	const float kmh = 100.0f;
