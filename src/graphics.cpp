@@ -255,12 +255,12 @@ void key_hold() {
 			camera.pos.x += camera.R.xx*fvel;
 			camera.pos.y += camera.R.xy*fvel;
 		}
-		if(get_key_state(' ')) {
+		if(get_key_state(' ') || get_key_state('\xa0')) {
 			camera.pos.x -= camera.R.xy*camera.R.zz*fvel;
 			camera.pos.y += camera.R.xx*camera.R.zz*fvel;
 			camera.pos.z -= camera.R.yz*fvel;
 		}
-		if(get_key_state('C')) {
+		if(get_key_state('C') || get_key_state('\xa2')) {
 			camera.pos.x += camera.R.xy*camera.R.zz*fvel;
 			camera.pos.y -= camera.R.xx*camera.R.zz*fvel;
 			camera.pos.z += camera.R.yz*fvel;
@@ -299,6 +299,18 @@ void move_mouse(int dx, int dy)
 	if (lockmouse) return;
 	dmx = camera.ms*(double)dx;
 	dmy = camera.ms*(double)dy;
+}
+
+void move_mouse_wheel(bool up)
+{
+	if(!camera.free) { // camera.zoom
+		if(up) dzo += 1.0f;
+		else   dzo -= 1.0f;
+	} else if(!lockmouse) {
+		if(up) fl -= 1.0f;
+		else   fl += 1.0f;
+		fvel = 0.05f*exp(fl*0.25f);
+	}
 }
 
 #if defined(WINDOWS_GRAPHICS)
@@ -682,14 +694,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			);
 			break;
 		case WM_MOUSEWHEEL:
-			if(!camera.free) { // camera.zoom
-				if((short)HIWORD(wParam)<0) dzo += 1.0f;
-				else                        dzo -= 1.0f;
-			} else if(!lockmouse) {
-				if((short)HIWORD(wParam)<0) fl -= 1.0f;
-				else                        fl += 1.0f;
-				fvel = 0.05f*exp(fl*0.25f);
-			}
+			move_mouse_wheel((short)HIWORD(wParam)<0);
 			break;
 		case WM_KEYDOWN:
 			int key = (int)wParam;

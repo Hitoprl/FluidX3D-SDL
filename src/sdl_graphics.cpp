@@ -109,7 +109,7 @@ void resize_camera(unsigned width, unsigned height)
 
 void handle_key(SDL_Keycode code)
 {
-    static std::unordered_map<SDL_Keycode, int> key_map{
+    static const std::unordered_map<SDL_Keycode, int> key_map{
         {SDLK_0, '0'},
         {SDLK_1, '1'},
         {SDLK_2, '2'},
@@ -169,7 +169,7 @@ void handle_key(SDL_Keycode code)
 
 bool get_key_state(int key)
 {
-    static std::unordered_map<int, SDL_Keycode> key_map{
+    static const std::unordered_map<int, SDL_Keycode> key_map{
         {'0', SDLK_0},
         {'1', SDLK_1},
         {'2', SDLK_2},
@@ -207,6 +207,8 @@ bool get_key_state(int key)
         {'Y', SDLK_y},
         {'Z', SDLK_z},
         {' ', SDLK_SPACE},
+        {'\xa0', SDLK_LSHIFT},
+        {'\xa2', SDLK_LCTRL},
     };
 
     auto const it = key_map.find(key);
@@ -360,6 +362,13 @@ int main(int argc, char* argv[]) {
             case SDL_MOUSEMOTION:
                 if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
                     move_mouse(-event.motion.xrel, -event.motion.yrel);
+                }
+                break;
+
+            case SDL_MOUSEWHEEL:
+                if (event.wheel.y != 0)
+                {
+                    move_mouse_wheel(event.wheel.y < 0);
                 }
                 break;
             }

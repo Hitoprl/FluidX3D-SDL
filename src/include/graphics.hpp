@@ -94,6 +94,7 @@ void set_cursor_pos(int x, int y);
 void key_bindings(const int key);
 void key_hold();
 void move_mouse(int dx, int dy);
+void move_mouse_wheel(bool up);
 bool get_key_state(int key);
 
 #if defined(WINDOWS_GRAPHICS) || defined(SDL_GRAPHICS)
