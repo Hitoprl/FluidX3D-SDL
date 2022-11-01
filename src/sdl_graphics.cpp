@@ -1,15 +1,18 @@
 #include "graphics.hpp"
 #include "utilities.hpp"
-#include <SDL_render.h>
-#include <SDL_video.h>
 
 #ifdef SDL_GRAPHICS
 
+#include "SDL_FontCache.h"
+
 #include <SDL.h>
+#include <SDL_render.h>
+#include <SDL_video.h>
 
 #include <memory>
 #include <string>
 #include <algorithm>
+#include <vector>
 
 using namespace std::literals;
 
@@ -48,10 +51,19 @@ using unique_ptr_fn = std::unique_ptr<
     typename param_type<decltype(DestroyFn)>::type,
     fn_deleter<typename param_type<decltype(DestroyFn)>::type, DestroyFn>>;
 
+struct Label
+{
+    std::string string;
+    int x, y;
+    Color color;
+};
+
 std::unique_ptr<Image> frame;
 unique_ptr_fn<SDL_DestroyWindow> window;
 unique_ptr_fn<SDL_DestroyRenderer> screen_renderer;
 unique_ptr_fn<SDL_DestroyTexture> screen_texture;
+unique_ptr_fn<FC_FreeFont> font;
+std::vector<Label> labels;
 
 void resize_camera(unsigned width, unsigned height)
 {
@@ -97,10 +109,7 @@ void draw_bitmap(const void* buffer)
 
 void draw_label(const Color& c, const string& s, const int x, const int y)
 {
-    (void)c;
-    (void)s;
-    (void)x;
-    (void)y;
+    labels.emplace_back(Label{s, x, y, c});
 }
 
 void set_cursor_pos(int x, int y)
@@ -116,10 +125,9 @@ int main(int argc, char* argv[]) {
                     WINDOW_NAME,
                     SDL_WINDOWPOS_UNDEFINED,
                     SDL_WINDOWPOS_UNDEFINED,
-                    2560,
-                    1440,
+                    640,
+                    480,
                     SDL_WINDOW_SHOWN |
-                    SDL_WINDOW_ALLOW_HIGHDPI |
                     SDL_WINDOW_RESIZABLE);
 
     if (window == nullptr)
@@ -128,13 +136,46 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    float font_scale = 1;
+    if (SDL_Rect rect; SDL_GetDisplayUsableBounds(
+                SDL_GetWindowDisplayIndex(window.get()), &rect) == 0)
+    {
+        font_scale = static_cast<float>(rect.w) / 1920.0f;
+        SDL_SetWindowSize(window.get(), (rect.w * 2) / 3, (rect.h * 2) / 3);
+        SDL_SetWindowPosition(window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    }
+
     screen_renderer = make_unique_fn<SDL_CreateRenderer, SDL_DestroyRenderer>(
             window.get(), -1, 0);
 
-    if (screen_renderer == nullptr) {
+    if (screen_renderer == nullptr)
+    {
         print_info("Couldn't create renderer:"s + SDL_GetError());
         return 1;
     }
+
+    font = make_unique_fn<FC_CreateFont, FC_FreeFont>();
+
+    if (font == nullptr)
+    {
+        print_info("Couldn't create font:"s + SDL_GetError());
+        return 1;
+    }
+
+    if (!FC_LoadFont(
+            font.get(),
+            screen_renderer.get(),
+            (get_exe_path() + "../../fonts/RobotoMono-Regular.ttf").c_str(),
+            12 * font_scale,
+            FC_MakeColor(255,255,255,255),
+            TTF_STYLE_NORMAL))
+    {
+        print_info("Couldn't load font:"s + SDL_GetError());
+        return 1;
+    }
+
+    global_font_height = 12 * font_scale;
+    global_font_width = 7 * font_scale;
 
     {
         int w, h;
@@ -154,6 +195,8 @@ int main(int argc, char* argv[]) {
 		// main loop ################################################################
 		main_graphics();
 
+        main_label(frametime);
+
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_QUIT:
@@ -171,6 +214,11 @@ int main(int argc, char* argv[]) {
 
         SDL_RenderClear(screen_renderer.get());
         SDL_RenderCopy(screen_renderer.get(), screen_texture.get(), nullptr, nullptr);
+        for (auto const& label : labels)
+        {
+            FC_Draw(font.get(), screen_renderer.get(), label.x, label.y, label.string.c_str());
+        }
+        labels.clear();
         SDL_RenderPresent(screen_renderer.get());
 
         frametime = clock.stop();

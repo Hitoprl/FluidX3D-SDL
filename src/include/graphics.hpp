@@ -82,8 +82,8 @@ struct Color {
 	Color() = default;
 };
 
-#define FONT_HEIGHT 10 // default: 10
-#define FONT_WIDTH 5 // default: 6
+extern int global_font_height; // default: 10
+extern int global_font_width;  // default: 5
 
 void set_zoom(const float rad);
 void set_light(const uint i, const float3& p);

@@ -17,6 +17,8 @@ bool autorotation = false; // autorotation
 double mx=0.0, my=0.0, dmx=0.0, dmy=0.0; // mouse position
 float zo=0.0f, dzo=0.0f; // zoom and perspective
 float fl=0.0f, fvel=0.05f; // free camera speed
+int global_font_height = 10;
+int global_font_width = 5;
 
 #ifdef WINDOWS_GRAPHICS
 void set_cursor_pos(int x, int y)
@@ -750,7 +752,7 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PSTR, _In_
 	SetTextAlign(backDC, TA_TOP);
 	SetBkMode(backDC, TRANSPARENT);
 	SetPolyFillMode(backDC, ALTERNATE);
-	HFONT hFont = CreateFont(FONT_HEIGHT+5, FONT_WIDTH+1, 0, 0, 500, 0, 0, 0, ANSI_CHARSET, 0, 0, 0, 0, "Courier New"); // (HFONT)GetStockObject(ANSI_FIXED_FONT);
+	HFONT hFont = CreateFont(global_font_height+5, global_font_width+1, 0, 0, 500, 0, 0, 0, ANSI_CHARSET, 0, 0, 0, 0, "Courier New"); // (HFONT)GetStockObject(ANSI_FIXED_FONT);
 	SelectObject(backDC, hFont);
 
 	thread compute_thread(main_physics); // start main_physics() in a new thread
