@@ -1,3 +1,5 @@
+#include "SDL_events.h"
+#include "SDL_keycode.h"
 #include "graphics.hpp"
 #include "utilities.hpp"
 
@@ -15,6 +17,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <unordered_map>
 
 using namespace std::literals;
 
@@ -66,6 +69,17 @@ unique_ptr_fn<SDL_DestroyRenderer> screen_renderer;
 unique_ptr_fn<SDL_DestroyTexture> screen_texture;
 unique_ptr_fn<FC_FreeFont> font;
 std::vector<Label> labels;
+std::unordered_map<SDL_Keycode, bool> key_state;
+
+bool get_sdl_key_state(SDL_Keycode code)
+{
+    auto const it = key_state.find(code);
+    if (it == key_state.cend())
+    {
+        return false;
+    }
+    return it->second;
+}
 
 void resize_camera(unsigned width, unsigned height)
 {
@@ -93,7 +107,116 @@ void resize_camera(unsigned width, unsigned height)
 	frame.reset(new Image(camera.width, camera.height));
 }
 
+void handle_key(SDL_Keycode code)
+{
+    static std::unordered_map<SDL_Keycode, int> key_map{
+        {SDLK_0, '0'},
+        {SDLK_1, '1'},
+        {SDLK_2, '2'},
+        {SDLK_3, '3'},
+        {SDLK_4, '4'},
+        {SDLK_5, '5'},
+        {SDLK_6, '6'},
+        {SDLK_7, '7'},
+        {SDLK_8, '8'},
+        {SDLK_9, '9'},
+        {SDLK_a, 'A'},
+        {SDLK_b, 'B'},
+        {SDLK_c, 'C'},
+        {SDLK_d, 'D'},
+        {SDLK_e, 'E'},
+        {SDLK_f, 'F'},
+        {SDLK_g, 'G'},
+        {SDLK_h, 'H'},
+        {SDLK_i, 'I'},
+        {SDLK_j, 'J'},
+        {SDLK_k, 'K'},
+        {SDLK_l, 'L'},
+        {SDLK_m, 'M'},
+        {SDLK_n, 'N'},
+        {SDLK_o, 'O'},
+        {SDLK_p, 'P'},
+        {SDLK_q, 'Q'},
+        {SDLK_r, 'R'},
+        {SDLK_s, 'S'},
+        {SDLK_t, 'T'},
+        {SDLK_u, 'U'},
+        {SDLK_v, 'V'},
+        {SDLK_w, 'W'},
+        {SDLK_x, 'X'},
+        {SDLK_y, 'Y'},
+        {SDLK_z, 'Z'},
+        {SDLK_SPACE, ' '},
+        {SDLK_COMMA, ','},
+        {SDLK_PERIOD, '.'},
+    };
+
+    if (code == SDLK_ESCAPE)
+    {
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+    }
+
+    auto const it = key_map.find(code);
+    if (it == key_map.cend())
+    {
+        return;
+    }
+
+    key_bindings(it->second);
+}
+
 } // namespace
+
+bool get_key_state(int key)
+{
+    static std::unordered_map<int, SDL_Keycode> key_map{
+        {'0', SDLK_0},
+        {'1', SDLK_1},
+        {'2', SDLK_2},
+        {'3', SDLK_3},
+        {'4', SDLK_4},
+        {'5', SDLK_5},
+        {'6', SDLK_6},
+        {'7', SDLK_7},
+        {'8', SDLK_8},
+        {'9', SDLK_9},
+        {'A', SDLK_a},
+        {'B', SDLK_b},
+        {'C', SDLK_c},
+        {'D', SDLK_d},
+        {'E', SDLK_e},
+        {'F', SDLK_f},
+        {'G', SDLK_g},
+        {'H', SDLK_h},
+        {'I', SDLK_i},
+        {'J', SDLK_j},
+        {'K', SDLK_k},
+        {'L', SDLK_l},
+        {'M', SDLK_m},
+        {'N', SDLK_n},
+        {'O', SDLK_o},
+        {'P', SDLK_p},
+        {'Q', SDLK_q},
+        {'R', SDLK_r},
+        {'S', SDLK_s},
+        {'T', SDLK_t},
+        {'U', SDLK_u},
+        {'V', SDLK_v},
+        {'W', SDLK_w},
+        {'X', SDLK_x},
+        {'Y', SDLK_y},
+        {'Z', SDLK_z},
+        {' ', SDLK_SPACE},
+    };
+
+    auto const it = key_map.find(key);
+    if (it == key_map.cend())
+    {
+        return false;
+    }
+
+    return get_sdl_key_state(it->second);
+}
 
 void draw_bitmap(const void* buffer)
 {
@@ -194,6 +317,7 @@ int main(int argc, char* argv[]) {
 	clear_console();
 	while(running) {
 		// main loop ################################################################
+        key_hold();
 		main_graphics();
 
         main_label(frametime);
@@ -203,6 +327,7 @@ int main(int argc, char* argv[]) {
             case SDL_QUIT:
                 exit(0);
                 break;
+
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                     if (!info.lbm) break;
@@ -210,6 +335,31 @@ int main(int argc, char* argv[]) {
                     SDL_GetRendererOutputSize(screen_renderer.get(), &w, &h);
                     resize_camera(w, h);
                     info.lbm->reallocate_graphics();
+                }
+                break;
+
+            case SDL_KEYDOWN:
+                if (!event.key.repeat)
+                {
+                    key_state[event.key.keysym.sym] = true;
+                    handle_key(event.key.keysym.sym);
+                }
+                break;
+
+            case SDL_KEYUP:
+                if (!event.key.repeat)
+                {
+                    key_state[event.key.keysym.sym] = false;
+                }
+                break;
+
+            case SDL_MOUSEBUTTONDOWN:
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+                break;
+
+            case SDL_MOUSEMOTION:
+                if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
+                    move_mouse(-event.motion.xrel, -event.motion.yrel);
                 }
                 break;
             }

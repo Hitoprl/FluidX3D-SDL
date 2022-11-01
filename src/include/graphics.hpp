@@ -91,6 +91,10 @@ void set_light(const uint i, const float3& p);
 void draw_bitmap(const void* buffer);
 void draw_label(const Color& c, const string& s, const int x, const int y);
 void set_cursor_pos(int x, int y);
+void key_bindings(const int key);
+void key_hold();
+void move_mouse(int dx, int dy);
+bool get_key_state(int key);
 
 #if defined(WINDOWS_GRAPHICS) || defined(SDL_GRAPHICS)
 

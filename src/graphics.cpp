@@ -1,4 +1,5 @@
 #include "graphics.hpp"
+#include "utilities.hpp"
 
 vector<string> main_arguments = vector<string>(); // console arguments
 std::atomic_bool running = true;
@@ -16,7 +17,7 @@ bool lockmouse = false; // mouse movement won't change camera view when this is 
 bool autorotation = false; // autorotation
 double mx=0.0, my=0.0, dmx=0.0, dmy=0.0; // mouse position
 float zo=0.0f, dzo=0.0f; // zoom and perspective
-float fl=0.0f, fvel=0.05f; // free camera speed
+float fl=0.0f, fvel=5.f; // free camera speed
 int global_font_height = 10;
 int global_font_width = 5;
 
@@ -231,6 +232,75 @@ Color lighting(const Color& c, const float3& p, const float3& normal, const bool
 	return Color((int)(br*c.r), (int)(br*c.g), (int)(br*c.b));
 }
 
+void key_hold() {
+	if(!camera.free) {
+		zo = 0.8f*zo+0.2f*dzo; // continuous camera.zoom
+		camera.zoom = exp(zo*0.25f);
+	} else { // move free camera
+		if(get_key_state('W')) {
+			camera.pos.x += camera.R.xy*camera.R.yz*fvel;
+			camera.pos.y -= camera.R.xx*camera.R.yz*fvel;
+			camera.pos.z -= camera.R.zz*fvel;
+		}
+		if(get_key_state('A')) {
+			camera.pos.x -= camera.R.xx*fvel;
+			camera.pos.y -= camera.R.xy*fvel;
+		}
+		if(get_key_state('S')) {
+			camera.pos.x -= camera.R.xy*camera.R.yz*fvel;
+			camera.pos.y += camera.R.xx*camera.R.yz*fvel;
+			camera.pos.z += camera.R.zz*fvel;
+		}
+		if(get_key_state('D')) {
+			camera.pos.x += camera.R.xx*fvel;
+			camera.pos.y += camera.R.xy*fvel;
+		}
+		if(get_key_state(' ')) {
+			camera.pos.x -= camera.R.xy*camera.R.zz*fvel;
+			camera.pos.y += camera.R.xx*camera.R.zz*fvel;
+			camera.pos.z -= camera.R.yz*fvel;
+		}
+		if(get_key_state('C')) {
+			camera.pos.x += camera.R.xy*camera.R.zz*fvel;
+			camera.pos.y -= camera.R.xx*camera.R.zz*fvel;
+			camera.pos.z += camera.R.yz*fvel;
+		}
+	}
+	if(!lockmouse) {
+		if(get_key_state('I')) dmy += camera.ms; // rotate camera with keys
+		if(get_key_state('J')) dmx += camera.ms;
+		if(get_key_state('K')) dmy -= camera.ms;
+		if(get_key_state('L')) dmx -= camera.ms;
+	}
+	if(autorotation) update_rotation(-1, 0);
+	if(get_key_state('Y')) { // adjust field of view
+		camera.fov = fmin(camera.fov<1.0f ? 1.0f : camera.fov+1.0f, 179.0f);
+		camera.dis = 0.5f*(float)camera.width/tan(camera.fov*pif/360.0f);
+	}
+	if(get_key_state('X')) {
+		camera.fov = fmax(camera.fov-1.0f, 1.0f);
+		camera.dis = 0.5f*(float)camera.width/tan(camera.fov*pif/360.0f);
+	}
+	if(get_key_state('N')) { // adjust camera.vr eye distance
+		camera.eye_distance = fmax(camera.eye_distance-0.2f, 0.0f);
+	}
+	if(get_key_state('M')) {
+		camera.eye_distance += 0.2f;
+	}
+	mx = 0.8*mx+0.2*dmx; // continuous mouse movement
+	my = 0.8*my+0.2*dmy;
+	dmx = 0.0;
+	dmy = 0.0;
+	if(!lockmouse) update_rotation(mx, my);
+}
+
+void move_mouse(int dx, int dy)
+{
+	if (lockmouse) return;
+	dmx = camera.ms*(double)dx;
+	dmy = camera.ms*(double)dy;
+}
+
 #if defined(WINDOWS_GRAPHICS)
 
 #define WIN32_LEAN_AND_MEAN
@@ -243,66 +313,9 @@ HWND hWnd;
 HDC frontDC, backDC;
 HBITMAP frame;
 
-void key_hold() {
-	if(!camera.free) {
-		zo = 0.8f*zo+0.2f*dzo; // continuous camera.zoom
-		camera.zoom = exp(zo*0.25f);
-	} else { // move free camera
-		if(GetAsyncKeyState('W')<0) {
-			camera.pos.x += camera.R.xy*camera.R.yz*fvel;
-			camera.pos.y -= camera.R.xx*camera.R.yz*fvel;
-			camera.pos.z -= camera.R.zz*fvel;
-		}
-		if(GetAsyncKeyState('A')<0) {
-			camera.pos.x -= camera.R.xx*fvel;
-			camera.pos.y -= camera.R.xy*fvel;
-		}
-		if(GetAsyncKeyState('S')<0) {
-			camera.pos.x -= camera.R.xy*camera.R.yz*fvel;
-			camera.pos.y += camera.R.xx*camera.R.yz*fvel;
-			camera.pos.z += camera.R.zz*fvel;
-		}
-		if(GetAsyncKeyState('D')<0) {
-			camera.pos.x += camera.R.xx*fvel;
-			camera.pos.y += camera.R.xy*fvel;
-		}
-		if(GetAsyncKeyState(VK_SPACE)<0) {
-			camera.pos.x -= camera.R.xy*camera.R.zz*fvel;
-			camera.pos.y += camera.R.xx*camera.R.zz*fvel;
-			camera.pos.z -= camera.R.yz*fvel;
-		}
-		if(GetAsyncKeyState('C')<0) {
-			camera.pos.x += camera.R.xy*camera.R.zz*fvel;
-			camera.pos.y -= camera.R.xx*camera.R.zz*fvel;
-			camera.pos.z += camera.R.yz*fvel;
-		}
-	}
-	if(!lockmouse) {
-		if(GetAsyncKeyState('I')<0) dmy += camera.ms; // rotate camera with keys
-		if(GetAsyncKeyState('J')<0) dmx += camera.ms;
-		if(GetAsyncKeyState('K')<0) dmy -= camera.ms;
-		if(GetAsyncKeyState('L')<0) dmx -= camera.ms;
-	}
-	if(autorotation) update_rotation(-1, 0);
-	if(GetAsyncKeyState('Y')<0) { // adjust field of view
-		camera.fov = fmin(camera.fov<1.0f ? 1.0f : camera.fov+1.0f, 179.0f);
-		camera.dis = 0.5f*(float)camera.width/tan(camera.fov*pif/360.0f);
-	}
-	if(GetAsyncKeyState('X')<0) {
-		camera.fov = fmax(camera.fov-1.0f, 1.0f);
-		camera.dis = 0.5f*(float)camera.width/tan(camera.fov*pif/360.0f);
-	}
-	if(GetAsyncKeyState('N')<0) { // adjust camera.vr eye distance
-		camera.eye_distance = fmax(camera.eye_distance-0.2f, 0.0f);
-	}
-	if(GetAsyncKeyState('M')<0) {
-		camera.eye_distance += 0.2f;
-	}
-	mx = 0.8*mx+0.2*dmx; // continuous mouse movement
-	my = 0.8*my+0.2*dmy;
-	dmx = 0.0;
-	dmy = 0.0;
-	if(!lockmouse) update_rotation(mx, my);
+bool get_key_state(int key)
+{
+	return GetAsyncKeyState(key) < 0;
 }
 
 void draw_bitmap(const void* buffer) {
@@ -663,10 +676,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			exit(0);
 			return 0;
 		case WM_MOUSEMOVE:
-			if(!lockmouse) {
-				dmx = camera.ms*(double)((int)camera.width/2 -(int)LOWORD(lParam));
-				dmy = camera.ms*(double)((int)camera.height/2-(int)HIWORD(lParam));
-			}
+			move_mouse(
+				(int)camera.width/2 - (int)LOWORD(lParam),
+				(int)camera.height/2 - (int)HIWORD(lParam)
+			);
 			break;
 		case WM_MOUSEWHEEL:
 			if(!camera.free) { // camera.zoom
